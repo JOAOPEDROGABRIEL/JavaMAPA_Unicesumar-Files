@@ -2,128 +2,176 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
+        // VERIFICAÇÃO DE ARGUMENTOS DE LINHA DE COMANDO (CLI)
+        // Se houver argumentos passados no comando "java Main ...", entra no modo rápido
+        if (args.length > 0) {
+            executarModoCLI(args);
+        } else {
+            // Se não houver argumentos, executa o modo interativo (Menu)
+            executarModoInterativo();
+        }
+    }
+
+    // --- MODO LINHA DE COMANDO (Rápido) ---
+    // Exemplo de uso: java Main "Joao Silva" 12345 500.00
+    private static void executarModoCLI(String[] args) {
+        System.out.println("=== MODO CLI INICIADO ===");
+        
+        try {
+            // 1. Validação básica de quantidade de argumentos
+            if (args.length < 3) {
+                System.out.println("Erro: Para usar o modo CLI, forneça: <Nome> <NumeroConta> <DepositoInicial>");
+                return;
+            }
+
+            String nome = args[0].replace("_", " "); // Truque para nomes compostos via terminal sem aspas
+            int numero = Integer.parseInt(args[1]);
+            double depositoInicial = Double.parseDouble(args[2]);
+
+            // 2. Criação e Manipulação
+            ContaBancaria conta = new ContaBancaria(nome, numero);
+            System.out.println("Conta criada via argumentos.");
+            
+            conta.depositar(depositoInicial);
+            
+            // Simulação de um saque automático para demonstrar funcionamento
+            System.out.println("Simulando saque de teste (R$ 50,00)...");
+            conta.sacar(50.0);
+
+            // 3. Resultado Final
+            System.out.println("\n--- ESTADO FINAL (CLI) ---");
+            System.out.println(conta.toString()); // Usa o toString que criamos na classe ContaBancaria
+
+            // NOTA SOBRE PERSISTÊNCIA:
+            // Aqui seria o local para implementar salvamento em arquivo ou banco de dados,
+            // caso fosse um requisito, mas para simplicidade, estou omitindo essa parte.
+
+        } catch (NumberFormatException e) {
+            System.out.println("Erro nos argumentos: Verifique se o número da conta e valor são numéricos.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Erro de regra de negócio: " + e.getMessage());
+        }
+    }
+
+    // --- MODO INTERATIVO (Menu Original) ---
+    private static void executarModoInterativo() {
+        Scanner scanner = new Scanner(System.in);
+        ContaBancaria conta = null;
         boolean condicaoFuncionamento = true;
 
         while (condicaoFuncionamento) {
-            System.out.println("Bem-vindo ao sistema bancário!");
+            System.out.println("\n=== SISTEMA BANCÁRIO (Interativo) ===");
             System.out.println("1. Criar Conta Bancária");
             System.out.println("2. Depositar");
             System.out.println("3. Sacar");
-            System.out.println("4. Transferir");
-            System.out.println("5. Consultar Saldo");
-            System.out.println("6. Sair");
+            System.out.println("4. Consultar Saldo");
+            System.out.println("5. Sair");
             System.out.print("Escolha uma opção: ");
 
-            Scanner scanner = new Scanner(System.in);
-            int opcao = scanner.nextInt();
-            ContaBancaria conta = null;
-            
+            int opcao = -1;
+            try {
+                // Tenta ler a linha inteira e converter, para evitar problemas de buffer
+                String entrada = scanner.nextLine();
+                if (!entrada.isEmpty()) {
+                    opcao = Integer.parseInt(entrada);
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Por favor, digite apenas números.");
+                continue;
+            }
+
             switch (opcao) {
                 case 1:
-                    conta = criarConta();
-                    if (conta != null) {
-                        //Conta criada com sucesso, prosseguir com outras operações
-                        System.out.println("Conta criada para o titular: " + conta.getTitular());
-                        System.out.println("Número da conta: " + conta.getNumeroConta());
-                        System.out.println("Saldo: " + conta.getSaldo());
-                    }
-                    break;
-                case 2:
-                    if (conta == null) {
-                        System.out.println("Nenhuma conta encontrada. Criando nova conta...");
-                        conta = criarConta();
-                        if (conta == null) {
-                            System.out.println("Conta não foi criada. Operação cancelada.");
-                            break;
-                        }
-                    }
-                    System.out.print("Digite o valor a ser depositado: ");
-                    double valorDeposito = scanner.nextDouble();
-                    scanner.nextLine();
-                    conta.depositar(valorDeposito);
-                    System.out.println("Depósito realizado com sucesso! Saldo atual: " + conta.getSaldo());
+                    conta = criarContaInterativo(scanner);
                     break;
 
-                    
+                case 2:
+                    if (verificarContaExiste(conta)) {
+                        System.out.print("Digite o valor do depósito: ");
+                        double valorDep = lerDouble(scanner);
+                        conta.depositar(valorDep);
+                        System.out.println("Saldo atual: " + conta.getSaldo());
+                    }
+                    break;
+
                 case 3:
-                    // TODO:Implementar lógica para sacar
-                   
+                    if (verificarContaExiste(conta)) {
+                        System.out.print("Digite o valor do saque: ");
+                        double valorSaque = lerDouble(scanner);
+                        conta.sacar(valorSaque);
+                        System.out.println("Saldo atual: " + conta.getSaldo());
+                    }
                     break;
+
                 case 4:
-                    // TODO:Implementar lógica para transferir
+                    if (verificarContaExiste(conta)) {
+                        System.out.println("\n--- Consulta de Saldo ---");
+                        System.out.println("Titular: " + conta.getTitular());
+                        System.out.println("Saldo disponível: R$ " + conta.getSaldo());
+                    }
                     break;
+
                 case 5:
-                    // TODO:Implementar lógica para consultar saldo
-                    break;
-                case 6:
                     condicaoFuncionamento = false;
-                    System.out.println("Saindo do sistema. Obrigado por usar nosso banco!");
+                    System.out.println("Encerrando sistema. Até logo!");
                     break;
+
                 default:
-                    System.out.println("Opção inválida. Por favor, tente novamente.");
+                    System.out.println("Opção inválida.");
             }
-            scanner.close();
         }
+        scanner.close();
     }
 
-    public static ContaBancaria criarConta() {
-        /* O retorno foi definido como ContaBancaria para facilitar 
-        a criação e manipulação da conta durante a resolução da 
-        atividade MAPA, entretanto o retorno original do método 
-        deve ser do tipo "boolean". */
-
-        //Criar um objeto Scanner para ler a entrada do usuário
-        Scanner scanner = new Scanner(System.in);
-
-        //Perguntar o nome do titular
-        System.out.print("Digite o nome do titular da conta: ");
+    // Separei a criação de conta do modo interativo para organizar melhor
+    public static ContaBancaria criarContaInterativo(Scanner scanner) {
+        System.out.print("Digite o nome do titular: ");
         String titular = scanner.nextLine();
 
-        //Perguntar o número da conta
-        System.out.print("Digite o número da conta (5 dígitos): ");
-        String numeroConta = scanner.nextLine();
-
-        //Perguntar se deseja definir um saldo inicial
-        System.out.print("Deseja definir um saldo inicial? (s/n): ");
-        char resposta = scanner.nextLine().charAt(0);
-
-        //Objeto ContaBancaria
-        ContaBancaria conta = null;
-
-        //Tentar criar a conta bancária
+        System.out.print("Digite o número da conta (Numérico): ");
+        int numero;
         try {
-            conta = new ContaBancaria(titular, numeroConta);
-        } catch (IllegalArgumentException e) {
-            //Erro na criação da conta
-            System.out.println(e.getMessage());
-            scanner.close();
+            numero = Integer.parseInt(scanner.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Erro: O número da conta deve conter apenas dígitos.");
             return null;
         }
 
-        //Definir o saldo inicial se o usuário desejar
-        double saldo = 0.0;
-
-        //Se a resposta for 's' ou 'S', pedir o saldo inicial
-        if (resposta == 's' || resposta == 'S') {
-            System.out.print("Digite o saldo inicial da conta: ");
-            saldo = scanner.nextDouble();
-            scanner.nextLine();
-            conta.depositar(saldo);
+        try {
+            ContaBancaria novaConta = new ContaBancaria(titular, numero);
+            System.out.println("Conta criada com sucesso!");
+            
+            System.out.print("Deseja realizar um depósito inicial? (s/n): ");
+            String resp = scanner.nextLine();
+            if (resp.equalsIgnoreCase("s")) {
+                System.out.print("Valor inicial: ");
+                double valorIni = lerDouble(scanner);
+                novaConta.depositar(valorIni);
+            }
+            return novaConta;
+        } catch (IllegalArgumentException e) {
+            System.out.println("Erro ao criar conta: " + e.getMessage());
+            return null;
         }
-
-        //Conta criada com sucesso
-        System.out.println("Conta criada com sucesso!");
-        scanner.close();
-        return conta;
     }
 
-    //Restante dos Métodos da classe Main...
-    /*TODOs:
-        - Implementar método para realizar Login e autenticação
-        - Implementar menu para operações bancárias
-        - Implementar interface gráfica (opcional)
-        - Implementar persistência de dados (opcional)
-        - Implementar testes unitários (opcional)
-        - Implementar funcionalidades adicionais conforme necessário
-    */
+    private static boolean verificarContaExiste(ContaBancaria conta) {
+        if (conta == null) {
+            System.out.println("⚠️ Nenhuma conta ativa. Crie uma conta primeiro (Opção 1).");
+            return false;
+        }
+        return true;
+    }
+
+    private static double lerDouble(Scanner scanner) {
+        try {
+            String linha = scanner.nextLine();
+            if (linha.isEmpty()) return 0.0;
+            // Trata tanto ponto quanto vírgula se necessário, mas Java padrão usa ponto no parseDouble
+            return Double.parseDouble(linha.replace(",", "."));
+        } catch (NumberFormatException e) {
+            System.out.println("Valor inválido, assumindo 0.0");
+            return 0.0;
+        }
+    }
 }

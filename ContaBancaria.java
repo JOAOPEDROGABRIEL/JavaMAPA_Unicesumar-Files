@@ -1,120 +1,77 @@
 public class ContaBancaria {
-    private String Titular;
-    private String NumeroConta;
-    private double Saldo;
+    // Atributos privados (Encapsulamento)
+    // Ajustado para 'int' conforme pedido no enunciado e nomes em minúsculo (convenção Java)
+    private String titular;
+    private int numeroConta;
+    private double saldo;
 
-    public ContaBancaria(String titular, String numeroConta) {
-        //Validar os parâmetros de entrada
-        if (numeroConta.length() != 5) {
-            throw new IllegalArgumentException("Número da conta deve ter 5 dígitos.");
-        }
-        for (char c : numeroConta.toCharArray()) {
-            if (!Character.isDigit(c)) {
-                throw new IllegalArgumentException("Número da conta deve conter apenas dígitos.");
-            }
-        }
-        if (titular.length() < 3) {
+    // Construtor
+    public ContaBancaria(String titular, int numeroConta) {
+        // Validação do titular
+        if (titular == null || titular.trim().length() < 3) {
             throw new IllegalArgumentException("Nome do titular deve ter pelo menos 3 caracteres.");
         }
-        for (char c : titular.toCharArray()) {
-            if (!Character.isLetter(c) && c != ' ') {
-                throw new IllegalArgumentException("Nome do titular deve conter apenas letras e espaços.");
-            }
+        
+        // Validação simples para garantir que o número da conta seja positivo
+        if (numeroConta <= 0) {
+            throw new IllegalArgumentException("O número da conta deve ser positivo.");
         }
 
-        //Definir os atributos
-        Titular = titular != null ? titular : "";
-        NumeroConta = numeroConta != null ? numeroConta : "";
-        Saldo = 0.0;
+        this.titular = titular;
+        this.numeroConta = numeroConta;
+        this.saldo = 0.0; // Saldo inicializa zerado por padrão
     }
 
+    // --- Métodos Getters (Acesso) ---
     public String getTitular() {
-        //Retornar o nome do titular
-        return Titular;
+        return titular;
     }
 
-    public String getNumeroConta() {
-        //Retornar o número da conta
-        return NumeroConta;
+    public int getNumeroConta() {
+        return numeroConta;
     }
 
     public double getSaldo() {
-        //Retornar o saldo da conta
-        return Saldo;
+        return saldo;
     }
 
+    // --- Métodos Setters (Modificação com Proteção) ---
     public void setTitular(String titular) {
-        //Definir o nome do titular apenas se tiver pelo menos 3 caracteres
-        if (titular != null && titular.length() >= 3) {
-            //Verificar se todos os caracteres são letras ou espaços
-            for (char c : titular.toCharArray()) {
-                if (!Character.isLetter(c) && c != ' ') {
-                    System.out.println("Nome do titular deve conter apenas letras e espaços.");
-                    return;
-                }
-            }
+        if (titular != null && titular.trim().length() >= 3) {
+            this.titular = titular;
         } else {
-            //Nome do titular inválido
-            System.out.println("Nome do titular deve ter pelo menos 3 caracteres.");
-            return;
+            System.out.println("Erro: Nome inválido para alteração.");
         }
-        Titular = titular;
     }
 
-    public void setNumeroConta(String numeroConta) {
-        //Definir o número da conta apenas se tiver 5 dígitos
-        if (numeroConta != null && numeroConta.length() == 5) {
-            //Verificar se todos os caracteres são dígitos
-            for (char c : numeroConta.toCharArray()) {
-                if (!Character.isDigit(c)) {
-                    System.out.println("Número da conta deve conter apenas dígitos.");
-                    return;
-                }
-            }
-        } else {
-            //Número da conta inválido
-            System.out.println("Número da conta deve ter 5 dígitos.");
-            return;
-        }
-        NumeroConta = numeroConta;
-    }
+    // Não criamos setSaldo, pois o saldo só deve ser alterado via depositar/sacar (Segurança)
+
+    // --- Métodos de Negócio ---
 
     public void depositar(double valor) {
-        //Adicionar o valor ao saldo da conta
-        if (valor < 0) {
-            throw new IllegalArgumentException("O valor do depósito não pode ser negativo.");
+        if (valor > 0) {
+            this.saldo += valor;
+            System.out.println("Depósito de R$ " + valor + " realizado com sucesso.");
+        } else {
+            System.out.println("Erro: O valor do depósito deve ser positivo.");
         }
-        
-        Saldo += valor;
-        System.out.println("Depósito realizado com sucesso!\n\nTitular: " + this.Titular + "\nNúmero da Conta: " + this.NumeroConta + "\nValor depositado: " + valor);
     }
 
     public boolean sacar(double valor) {
-        //Verificar se há saldo suficiente para o saque
-        if (valor <= Saldo) {
-            //Realizar o saque
-            Saldo -= valor;
-            System.out.println("Saque realizado com sucesso!\nValor sacado: " + valor + "\nSaldo restante: " + this.Saldo);
+        // Verificação de saldo suficiente (Regra de negócio)
+        if (valor > 0 && valor <= this.saldo) {
+            this.saldo -= valor;
+            System.out.println("Saque de R$ " + valor + " realizado com sucesso.");
             return true;
         } else {
-            //Saldo insuficiente para o saque
-            throw new IllegalArgumentException("Saldo insuficiente para o saque.");
+            System.out.println("Erro: Saldo insuficiente ou valor inválido.");
+            return false;
         }
     }
 
-    public void transferir(ContaBancaria destino, double valor) {
-        //Tentar sacar o valor da conta atual
-        if (sacar(valor)) {
-            //Se o saque for bem-sucedido, depositar o valor na conta de destino
-            destino.depositar(valor);
-        }
-    }
-
-    protected String formatarTextoCaixaAlta(String titular) {
-        //Verificar se o titular é nulo
-        if (titular == null) return "";
-
-        //Definir nome do titular inteiramente em caixa alta
-        return titular.toUpperCase();
+    // Método extra para exibir dados formatados
+    @Override
+    public String toString() {
+        return String.format("Conta: %d | Titular: %s | Saldo: R$ %.2f", numeroConta, titular, saldo);
     }
 }
