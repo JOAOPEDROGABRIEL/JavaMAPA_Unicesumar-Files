@@ -1,6 +1,5 @@
 public class ContaBancaria {
     // Atributos privados (Encapsulamento)
-    // Ajustado para 'int' conforme pedido no enunciado e nomes em minúsculo (convenção Java)
     private String titular;
     private int numeroConta;
     private double saldo;
@@ -43,8 +42,6 @@ public class ContaBancaria {
             System.out.println("Erro: Nome inválido para alteração.");
         }
     }
-
-    // Não criamos setSaldo, pois o saldo só deve ser alterado via depositar/sacar (Segurança)
 
     // --- Métodos de Negócio ---
 
